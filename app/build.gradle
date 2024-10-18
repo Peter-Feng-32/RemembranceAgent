@@ -1,0 +1,108 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'com.google.protobuf'
+    id 'kotlin-kapt'
+}
+
+android {
+    namespace 'com.example.remembranceagent'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.example.remembranceagent"
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    sourceSets {
+        main {
+            java {
+                srcDir 'src/main/java'
+            }
+            proto {
+                srcDir 'src/main/proto'
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+}
+
+dependencies {
+
+    implementation 'androidx.core:core-ktx:1.7.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
+
+    // Speech recognition
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'com.google.api.grpc:grpc-google-cloud-speech-v1p1beta1:0.63.0'
+    implementation 'com.google.flogger:flogger:0.4'
+    implementation 'com.google.flogger:flogger-system-backend:0.4'
+    implementation 'com.google.protobuf:protobuf-java:3.8.0'
+    implementation 'com.google.protobuf:protobuf-java-util:3.8.0'
+    implementation 'joda-time:joda-time:2.9.2'
+    implementation 'io.grpc:grpc-okhttp:1.21.0'
+    implementation 'com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava'
+
+    // Lucene
+    implementation 'org.apache.lucene:lucene-core:7.3.0'
+    implementation 'org.apache.lucene:lucene-queryparser:4.0.0'
+
+    // POI
+    implementation 'org.apache.poi:poi:3.9'
+
+    // Work manager
+    def work_version = "2.9.1"
+    // (Java only)
+    implementation "androidx.work:work-runtime:$work_version"
+
+    // Kotlin + coroutines
+    implementation "androidx.work:work-runtime-ktx:$work_version"
+
+    // Dependency Injection
+    implementation "com.google.dagger:hilt-android:2.45"
+    kapt "com.google.dagger:hilt-compiler:2.45"
+
+}
+
+protobuf {
+    // Configure the protoc executable
+    protoc {
+        artifact = 'com.google.protobuf:protoc:3.8.0'
+
+        generateProtoTasks {
+            all().each { task ->
+                task.builtins {
+                    remove java
+                }
+                task.builtins {
+                    java {}
+                }
+            }
+        }
+    }
+}
