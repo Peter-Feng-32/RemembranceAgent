@@ -15,6 +15,9 @@ private val TAG = "Retriever"
 // Todo: Make indexPath something that the user sets.  Fail gracefully if it can't be accessed.
 // Todo: Represent documents with interfaces and classes.
 class Retriever {
+    constructor() {
+
+    }
     val index: FSDirectory = FSDirectory.open(indexPath)
     val analyzer: StandardAnalyzer = StandardAnalyzer()
 

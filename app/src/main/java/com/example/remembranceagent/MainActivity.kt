@@ -31,6 +31,7 @@ class MainActivity : ComponentActivity() {
                 startActivity(intent)
                 return
             }
+            // Todo: Request recording permissions
             IndexingScheduler().scheduleWork(context)
         }
     }
@@ -57,7 +58,7 @@ class MainActivity : ComponentActivity() {
     }
 
     fun setPreference(key: String, value: String) {
-        preferences.edit().putString(key, key).commit()
+        preferences.edit().putString(key, value).commit()
     }
 
     fun getPreference(key: String): String {

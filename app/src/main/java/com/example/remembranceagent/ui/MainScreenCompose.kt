@@ -16,6 +16,9 @@ fun MainScreen(
     initialIndexPath: String = "",
     savePreference: (String, String) -> Unit = {k, v -> },
     indexDocuments: () -> Unit = {},
+    remembranceAgentStarted: Boolean = false,
+    startRemembranceAgent: () -> Unit = {},
+    stopRemembranceAgent: () -> Unit = {},
     modifier: Modifier = Modifier
     ) {
     var apiKey by remember { mutableStateOf(initialApiKey) }
@@ -40,6 +43,15 @@ fun MainScreen(
             Spacer(modifier = Modifier.height(16.dp))
             Button(onClick = indexDocuments) {
                 Text(text = "Index Documents")
+            }
+            if (remembranceAgentStarted) {
+                Button(onClick = stopRemembranceAgent) {
+                    Text(text = "Stop Remembrance Agent")
+                }
+            } else {
+                Button(onClick = startRemembranceAgent) {
+                    Text(text = "Start Remembrance Agent")
+                }
             }
         }
     }
