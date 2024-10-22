@@ -56,6 +56,9 @@ android {
 }
 
 dependencies {
+    implementation project(":terminal-emulator")
+
+    implementation 'com.vuzix:ultralite-sdk-android:1.5'
 
     implementation 'androidx.core:core-ktx:1.7.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
@@ -115,6 +118,8 @@ dependencies {
 
     // Optional - Integration with activities
     implementation 'androidx.activity:activity-compose:1.9.2'
+
+
 }
 
 protobuf {

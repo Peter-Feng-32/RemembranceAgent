@@ -17,12 +17,13 @@ import com.example.remembranceagent.ui.DOCUMENTS_PATH_STRING
 import com.example.remembranceagent.ui.GOOGLE_CLOUD_API_KEY
 import com.example.remembranceagent.ui.INDEX_PATH_STRING
 import com.example.remembranceagent.ui.MainScreen
+import javax.inject.Inject
 
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    val sharedPreferenceKey = "MainActivity"
-    var preferences: SharedPreferences = getSharedPreferences(sharedPreferenceKey, MODE_PRIVATE)
+    @Inject
+    lateinit var preferences: SharedPreferences
 
     private fun scheduleIndexing(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {

@@ -13,6 +13,7 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import com.example.remembranceagent.retrieval.Retriever
 import com.example.remembranceagent.ui.GOOGLE_CLOUD_API_KEY
+import com.example.remembranceagent.ui.INDEX_PATH_STRING
 import com.google.audio.CodecAndBitrate
 import com.google.audio.NetworkConnectionChecker
 import com.google.audio.asr.*
@@ -22,9 +23,8 @@ import com.google.audio.asr.cloud.CloudSpeechSessionFactory
 import com.google.audio.asr.SpeechRecognitionModelOptions.SpecificModel.DICTATION_DEFAULT
 import com.google.audio.asr.SpeechRecognitionModelOptions.SpecificModel.VIDEO
 import com.google.audio.asr.TranscriptionResultFormatterOptions.TranscriptColoringStyle.NO_COLORING
+import org.apache.lucene.document.Document
 import org.apache.lucene.search.ScoreDoc
-import javax.inject.Inject
-
 
 class RemembranceAgentService : Service() {
 
@@ -32,6 +32,7 @@ class RemembranceAgentService : Service() {
         const val TAG = "RemembranceAgentService"
     }
     var apiKey = ""
+    var indexPath = ""
 
     @RequiresApi(api = Build.VERSION_CODES.P)
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -40,6 +41,8 @@ class RemembranceAgentService : Service() {
         startRecording()
 
         apiKey = intent?.getStringExtra(GOOGLE_CLOUD_API_KEY) ?: ""
+        indexPath = intent?.getStringExtra(INDEX_PATH_STRING) ?: ""
+        retriever = Retriever(indexPath)
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -71,9 +74,7 @@ class RemembranceAgentService : Service() {
     private var networkChecker: NetworkConnectionChecker? = null
     private var factory: CloudSpeechSessionFactory? = null
 
-
-    @Inject
-    lateinit var retriever: Retriever  // Inject the repository
+    lateinit var retriever: Retriever
 
     private val transcriptUpdater =
         TranscriptionResultUpdatePublisher { formattedTranscript: Spanned, updateType: UpdateType ->
@@ -84,7 +85,8 @@ class RemembranceAgentService : Service() {
         }
 
     private fun handleTranscript(transcript: String) {
-        val retrievedDoc: ScoreDoc? = retriever.query(transcript)
+        val retrievedDoc: Document? = retriever.query(transcript)
+        Log.w(TAG, "Retrieved: " + retrievedDoc?.get("Title"))
     }
 
     private val readMicData = Runnable {
