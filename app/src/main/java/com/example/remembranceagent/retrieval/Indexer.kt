@@ -1,7 +1,5 @@
 package com.example.remembranceagent.retrieval
 
-import android.content.SharedPreferences
-import android.os.Environment
 import android.util.Log
 import org.apache.lucene.analysis.en.EnglishAnalyzer
 import org.apache.lucene.document.Document
@@ -17,8 +15,8 @@ import java.nio.file.Path
 
 private val TAG = "Indexer"
 
-class Indexer() {
-    private lateinit var indexWriter : IndexWriter;
+class Indexer(val indexPath: Path, val documentsPath: Path) {
+    private var indexWriter : IndexWriter;
 
     init {
         setupDirs()
@@ -26,13 +24,12 @@ class Indexer() {
         val index = FSDirectory.open(indexPath)
         val indexWriterConfig = IndexWriterConfig(analyzer)
         indexWriter = IndexWriter(index, indexWriterConfig)
-
     }
 
     fun setupDirs() {
-        if (Files.notExists(tempIndexPath)) {
+        if (Files.notExists(TEMP_INDEX_PATH)) {
             try {
-                Files.createDirectories(tempIndexPath)
+                Files.createDirectories(TEMP_INDEX_PATH)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -56,7 +53,6 @@ class Indexer() {
     fun indexDocuments() {
         indexTxtDocuments(documentsPath)
         // Todo: Index other types of documents
-
     }
 
     private fun indexTxtDocuments(documentsPath: Path) {

@@ -6,18 +6,16 @@ import android.content.Intent
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
-import android.os.Build
 import android.os.IBinder
 import android.text.Spanned
 import android.util.Log
-import androidx.annotation.RequiresApi
-import androidx.compose.ui.text.font.Typeface
 import com.example.remembranceagent.retrieval.RetrievedResult
 import com.example.remembranceagent.retrieval.Retriever
-import com.example.remembranceagent.retrieval.indexPath
-import com.example.remembranceagent.retrieval.tempIndexPath
+import com.example.remembranceagent.retrieval.DOCUMENTS_PATH
+import com.example.remembranceagent.retrieval.INDEX_PATH
+import com.example.remembranceagent.ui.DOCUMENTS_PATH_STRING_KEY
 import com.example.remembranceagent.ui.GOOGLE_CLOUD_API_KEY
-import com.example.remembranceagent.ui.INDEX_PATH_STRING
+import com.example.remembranceagent.ui.INDEX_PATH_STRING_KEY
 import com.example.remembranceagent.z100.Z100Renderer
 import com.google.audio.NetworkConnectionChecker
 import com.google.audio.asr.*
@@ -29,7 +27,6 @@ import com.google.audio.asr.TranscriptionResultUpdatePublisher.UpdateType
 import com.google.audio.asr.cloud.CloudSpeechSessionFactory
 import com.termux.terminal.TerminalEmulator
 import com.vuzix.ultralite.UltraliteSDK
-import org.apache.lucene.document.Document
 import java.util.Locale
 import kotlin.math.max
 
@@ -62,15 +59,21 @@ class RemembranceAgentService : Service() {
     }
     var apiKey = ""
     var indexPathString = ""
+    var documentsPathString = ""
+
     lateinit var ultraliteSDK: UltraliteSDK
     lateinit var z100Renderer: Z100Renderer
     lateinit var terminalEmulator: TerminalEmulator
     lateinit var safeTranscriptionResultFormatter: SafeTranscriptionResultFormatter
     lateinit var retriever: Retriever
+    var previousUpdateTimestamp: Long = 0
+    var queryGap: Long = 5000
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        apiKey = intent?.getStringExtra(GOOGLE_CLOUD_API_KEY) ?: "AIzaSyAIkVt1c10eZ-A5DdKXH48jtfmRgDAPHsg"
-        indexPathString = intent?.getStringExtra(INDEX_PATH_STRING) ?: indexPath.toString()
+        apiKey = intent?.getStringExtra(GOOGLE_CLOUD_API_KEY) ?: "AIzaSyDM2w_vhjkl36iOOd9Vr-1A7C7-1mb4j7A"
+        indexPathString = intent?.getStringExtra(INDEX_PATH_STRING_KEY) ?: INDEX_PATH.toString()
+        documentsPathString = intent?.getStringExtra(DOCUMENTS_PATH_STRING_KEY) ?: DOCUMENTS_PATH.toString()
+
         ultraliteSDK = UltraliteSDK.get(this)
         initTerminalEmulator()
 
@@ -78,8 +81,7 @@ class RemembranceAgentService : Service() {
         constructRepeatingRecognitionSession()
         startRecording()
 
-
-        retriever = Retriever(indexPathString)
+        retriever = Retriever(indexPathString, documentsPathString)
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -117,9 +119,15 @@ class RemembranceAgentService : Service() {
             Log.w(TAG, "Transcript: " + formattedTranscript)
             // terminalEmulator.append(clearScreenSequence.toByteArray(), clearScreenSequence.toByteArray().size)
             // terminalEmulator.append(formattedTranscript.toString().toByteArray(), formattedTranscript.toString().toByteArray().size)
+            val currTimestamp = System.currentTimeMillis()
+            if (System.currentTimeMillis() - previousUpdateTimestamp > queryGap) {
+                handleTranscript(formattedTranscript.toString())
+                previousUpdateTimestamp = currTimestamp
+            }
             if (updateType == UpdateType.TRANSCRIPT_FINALIZED) {
                 handleTranscript(formattedTranscript.toString())
                 recognizer?.resetAndClearTranscript()
+                previousUpdateTimestamp = currTimestamp
             }
         }
 

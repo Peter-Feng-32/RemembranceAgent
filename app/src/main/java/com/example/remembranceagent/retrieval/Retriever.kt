@@ -18,8 +18,8 @@ import kotlin.io.path.Path
 private val TAG = "Retriever"
 // Todo: Make indexPath something that the user sets.  Fail gracefully if it can't be accessed.
 // Todo: Represent documents with interfaces and classes.
-class Retriever(val indexPath: String) {
-    val index: FSDirectory = FSDirectory.open(Path(this.indexPath))
+class Retriever(val indexPathString: String, val documentPathString: String) {
+    val index: FSDirectory = FSDirectory.open(Path(this.indexPathString))
 
     fun query(queryString: String): RetrievedResult? {
         val reader: IndexReader = DirectoryReader.open(index)

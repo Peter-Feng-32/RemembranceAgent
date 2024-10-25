@@ -19,6 +19,7 @@ fun MainScreen(
     indexDocuments: () -> Unit = {},
     startRemembranceAgent: () -> Unit = {},
     stopRemembranceAgent: () -> Unit = {},
+    saveSettings: () -> Unit = {},
     modifier: Modifier = Modifier
     ) {
     var apiKey by remember { mutableStateOf(initialApiKey) }
@@ -52,9 +53,23 @@ fun MainScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(text = "Customize", style = MaterialTheme.typography.headlineLarge)
-            TextField(value = apiKey, onValueChange = {savePreference(GOOGLE_CLOUD_API_KEY, apiKey)}, label = { Text("Speech API Key") })
-            TextField(value = documentsPathString, onValueChange = { savePreference(DOCUMENTS_PATH_STRING, documentsPathString)}, label = { Text("Documents Path") })
-            TextField(value = indexPathString, onValueChange = { savePreference(INDEX_PATH_STRING, indexPathString)}, label = { Text("Index Path") })
+            TextField(value = apiKey, label = { Text("Speech API Key") }, onValueChange = { newValue ->
+                    apiKey = newValue
+            })
+            TextField(value = documentsPathString, label = { Text("Documents Path") }, onValueChange = { newValue ->
+                documentsPathString = newValue
+            })
+            TextField(value = indexPathString, label = { Text("Index Path") }, onValueChange = { newValue ->
+                indexPathString = newValue
+            })
+            Button(onClick = {
+                savePreference(GOOGLE_CLOUD_API_KEY, apiKey)
+                savePreference(DOCUMENTS_PATH_STRING_KEY, documentsPathString)
+                savePreference(INDEX_PATH_STRING_KEY, indexPathString)
+                saveSettings()
+            }) {
+                Text(text = "Save settings")
+            }
             Spacer(modifier = Modifier.height(16.dp))
             Button(onClick = indexDocuments) {
                 Text(text = "Index Documents")
