@@ -22,7 +22,6 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    @Inject
     lateinit var preferences: SharedPreferences
 
     private fun scheduleIndexing(context: Context) {
@@ -39,6 +38,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        preferences = getSharedPreferences("MyPreferences", Context.MODE_PRIVATE)
+
         setContent{
             MaterialTheme() {
                 MainScreen(

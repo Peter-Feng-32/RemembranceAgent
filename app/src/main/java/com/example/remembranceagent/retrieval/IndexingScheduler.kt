@@ -2,6 +2,7 @@ package com.example.remembranceagent.retrieval
 
 import android.content.Context
 import androidx.work.*
+import androidx.work.PeriodicWorkRequest
 import java.util.concurrent.TimeUnit
 
 val workName = "Remembrance Agent Document Indexing"

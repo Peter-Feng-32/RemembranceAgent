@@ -4,8 +4,8 @@
 4
 5    <uses-sdk
 6        android:minSdkVersion="30"
-6-->/Users/Peter/AndroidStudioProjects/termux-app/terminal-emulator/src/main/AndroidManifest.xml
-7        android:targetSdkVersion="28" />
-7-->/Users/Peter/AndroidStudioProjects/termux-app/terminal-emulator/src/main/AndroidManifest.xml
+6-->/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/src/main/AndroidManifest.xml
+7        android:targetSdkVersion="34" />
+7-->/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/src/main/AndroidManifest.xml
 8
 9</manifest>
