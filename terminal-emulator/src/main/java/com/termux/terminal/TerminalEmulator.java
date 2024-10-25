@@ -321,6 +321,17 @@ public final class TerminalEmulator {
         reset();
     }
 
+    public TerminalEmulator(int columns, int rows, Integer transcriptRows) {
+        mScreen = mMainBuffer = new TerminalBuffer(columns, getTerminalTranscriptRows(transcriptRows), rows);
+        mAltBuffer = new TerminalBuffer(columns, rows, rows);
+        mRows = rows;
+        mColumns = columns;
+        mTabStop = new boolean[mColumns];
+        mSession = null;
+        mClient = null;
+        reset();
+    }
+
     public void updateTerminalSessionClient(TerminalSessionClient client) {
         mClient = client;
         setCursorStyle();
@@ -354,14 +365,14 @@ public final class TerminalEmulator {
         if (mouseButton == MOUSE_LEFT_BUTTON_MOVED && !isDecsetInternalBitSet(DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT)) {
             // Do not send tracking.
         } else if (isDecsetInternalBitSet(DECSET_BIT_MOUSE_PROTOCOL_SGR)) {
-            mSession.write(String.format("\033[<%d;%d;%d" + (pressed ? 'M' : 'm'), mouseButton, column, row));
+            // mSession.write(String.format("\033[<%d;%d;%d" + (pressed ? 'M' : 'm'), mouseButton, column, row));
         } else {
             mouseButton = pressed ? mouseButton : 3; // 3 for release of all buttons.
             // Clip to screen, and clip to the limits of 8-bit data.
             boolean out_of_bounds = column > 255 - 32 || row > 255 - 32;
             if (!out_of_bounds) {
                 byte[] data = {'\033', '[', 'M', (byte) (32 + mouseButton), (byte) (32 + column), (byte) (32 + row)};
-                mSession.write(data, 0, data.length);
+                // mSession.write(data, 0, data.length);
             }
         }
     }
@@ -555,7 +566,7 @@ public final class TerminalEmulator {
                 if (mEscapeState == ESC_OSC)
                     doOsc(b);
                 else
-                    mSession.onBell();
+                    // mSession.onBell();
                 break;
             case 8: // Backspace (BS, ^H).
                 if (mLeftMargin == mCursorCol) {
@@ -830,7 +841,7 @@ public final class TerminalEmulator {
                                     value = 0; // 0=not recognized, 3=permanently set, 4=permanently reset
                                 }
                             }
-                            mSession.write(String.format(Locale.US, "\033[?%d;%d$y", mode, value));
+                            // mSession.write(String.format(Locale.US, "\033[?%d;%d$y", mode, value));
                         } else {
                             unknownSequence(b);
                         }
@@ -892,7 +903,7 @@ public final class TerminalEmulator {
                     if (dcs.equals("$q\"p")) {
                         // DECSCL, conformance level, http://www.vt100.net/docs/vt510-rm/DECSCL:
                         String csiString = "64;1\"p";
-                        mSession.write("\033P1$r" + csiString + "\033\\");
+                        // mSession.write("\033P1$r" + csiString + "\033\\");
                     } else {
                         finishSequenceAndLogError("Unrecognized DECRQSS string: '" + dcs + "'");
                     }
@@ -973,13 +984,13 @@ public final class TerminalEmulator {
                                         Logger.logWarn(mClient, LOG_TAG, "Unhandled termcap/terminfo name: '" + trans + "'");
                                 }
                                 // Respond with invalid request:
-                                mSession.write("\033P0+r" + part + "\033\\");
+                                // mSession.write("\033P0+r" + part + "\033\\");
                             } else {
                                 StringBuilder hexEncoded = new StringBuilder();
                                 for (int j = 0; j < responseValue.length(); j++) {
                                     hexEncoded.append(String.format("%02X", (int) responseValue.charAt(j)));
                                 }
-                                mSession.write("\033P1+r" + part + "=" + hexEncoded + "\033\\");
+                                // mSession.write("\033P1+r" + part + "=" + hexEncoded + "\033\\");
                             }
                         } else {
                             Logger.logError(mClient, LOG_TAG, "Invalid device termcap/terminfo name of odd length: " + part);
@@ -1063,7 +1074,7 @@ public final class TerminalEmulator {
                 switch (getArg0(-1)) {
                     case 6:
                         // Extended Cursor Position (DECXCPR - http://www.vt100.net/docs/vt510-rm/DECXCPR). Page=1.
-                        mSession.write(String.format(Locale.US, "\033[?%d;%d;1R", mCursorRow + 1, mCursorCol + 1));
+                        // mSession.write(String.format(Locale.US, "\033[?%d;%d;1R", mCursorRow + 1, mCursorCol + 1));
                         break;
                     default:
                         finishSequence();
@@ -1208,7 +1219,7 @@ public final class TerminalEmulator {
                 // * vim checks xterm version number >140 for "Request termcap/terminfo string" functionality >276 for SGR
                 // mouse report.
                 // The third number is a keyboard identifier not used nowadays.
-                mSession.write("\033[>41;320;0c");
+                // mSession.write("\033[>41;320;0c");
                 break;
             case 'm':
                 // https://bugs.launchpad.net/gnome-terminal/+bug/96676/comments/25
@@ -1621,7 +1632,7 @@ public final class TerminalEmulator {
                 // The important part that may still be used by some (tmux stores this value but does not currently use it)
                 // is the first response parameter identifying the terminal service class, where we send 64 for "vt420".
                 // This is followed by a list of attributes which is probably unused by applications. Send like xterm.
-                if (getArg0(0) == 0) mSession.write("\033[?64;1;2;6;9;15;18;21;22c");
+                // if (getArg0(0) == 0) mSession.write("\033[?64;1;2;6;9;15;18;21;22c");
                 break;
             case 'd': // ESC [ Pn d - Vert Position Absolute
                 setCursorRow(Math.min(Math.max(1, getArg0(1)), mRows) - 1);
@@ -1660,12 +1671,12 @@ public final class TerminalEmulator {
                     case 5: // Device status report (DSR):
                         // Answer is ESC [ 0 n (Terminal OK).
                         byte[] dsr = {(byte) 27, (byte) '[', (byte) '0', (byte) 'n'};
-                        mSession.write(dsr, 0, dsr.length);
+                        // mSession.write(dsr, 0, dsr.length);
                         break;
                     case 6: // Cursor position report (CPR):
                         // Answer is ESC [ y ; x R, where x,y is
                         // the cursor location.
-                        mSession.write(String.format(Locale.US, "\033[%d;%dR", mCursorRow + 1, mCursorCol + 1));
+                        // mSession.write(String.format(Locale.US, "\033[%d;%dR", mCursorRow + 1, mCursorCol + 1));
                         break;
                     default:
                         break;
@@ -1702,27 +1713,27 @@ public final class TerminalEmulator {
             case 't': // Window manipulation (from dtterm, as well as extensions)
                 switch (getArg0(0)) {
                     case 11: // Report xterm window state. If the xterm window is open (non-iconified), it returns CSI 1 t .
-                        mSession.write("\033[1t");
+                        //mSession.write("\033[1t");
                         break;
                     case 13: // Report xterm window position. Result is CSI 3 ; x ; y t
-                        mSession.write("\033[3;0;0t");
+                        //mSession.write("\033[3;0;0t");
                         break;
                     case 14: // Report xterm window in pixels. Result is CSI 4 ; height ; width t
                         // We just report characters time 12 here.
-                        mSession.write(String.format(Locale.US, "\033[4;%d;%dt", mRows * 12, mColumns * 12));
+                        //mSession.write(String.format(Locale.US, "\033[4;%d;%dt", mRows * 12, mColumns * 12));
                         break;
                     case 18: // Report the size of the text area in characters. Result is CSI 8 ; height ; width t
-                        mSession.write(String.format(Locale.US, "\033[8;%d;%dt", mRows, mColumns));
+                        //mSession.write(String.format(Locale.US, "\033[8;%d;%dt", mRows, mColumns));
                         break;
                     case 19: // Report the size of the screen in characters. Result is CSI 9 ; height ; width t
                         // We report the same size as the view, since it's the view really isn't resizable from the shell.
-                        mSession.write(String.format(Locale.US, "\033[9;%d;%dt", mRows, mColumns));
+                        //mSession.write(String.format(Locale.US, "\033[9;%d;%dt", mRows, mColumns));
                         break;
                     case 20: // Report xterm windows icon label. Result is OSC L label ST. Disabled due to security concerns:
-                        mSession.write("\033]LIconLabel\033\\");
+                        //mSession.write("\033]LIconLabel\033\\");
                         break;
                     case 21: // Report xterm windows title. Result is OSC l label ST. Disabled due to security concerns:
-                        mSession.write("\033]l\033\\");
+                        //mSession.write("\033]l\033\\");
                         break;
                     case 22:
                         // 22;0 -> Save xterm icon and window title on stack.
@@ -1939,7 +1950,7 @@ public final class TerminalEmulator {
                                 return;
                             } else {
                                 mColors.tryParseColor(colorIndex, textParameter.substring(parsingPairStart, i));
-                                mSession.onColorsChanged();
+                               // mSession.onColorsChanged();
                                 colorIndex = -1;
                                 parsingPairStart = -1;
                             }
@@ -1971,11 +1982,11 @@ public final class TerminalEmulator {
                                 int r = (65535 * ((rgb & 0x00FF0000) >> 16)) / 255;
                                 int g = (65535 * ((rgb & 0x0000FF00) >> 8)) / 255;
                                 int b = (65535 * ((rgb & 0x000000FF))) / 255;
-                                mSession.write("\033]" + value + ";rgb:" + String.format(Locale.US, "%04x", r) + "/" + String.format(Locale.US, "%04x", g) + "/"
-                                    + String.format(Locale.US, "%04x", b) + bellOrStringTerminator);
+                                //mSession.write("\033]" + value + ";rgb:" + String.format(Locale.US, "%04x", r) + "/" + String.format(Locale.US, "%04x", g) + "/"
+                                //    + String.format(Locale.US, "%04x", b) + bellOrStringTerminator);
                             } else {
                                 mColors.tryParseColor(specialIndex, colorSpec);
-                                mSession.onColorsChanged();
+                               // mSession.onColorsChanged();
                             }
                             specialIndex++;
                             if (endOfInput || (specialIndex > TextStyle.COLOR_INDEX_CURSOR) || ++charIndex >= textParameter.length())
@@ -1991,7 +2002,7 @@ public final class TerminalEmulator {
                 int startIndex = textParameter.indexOf(";") + 1;
                 try {
                     String clipboardText = new String(Base64.decode(textParameter.substring(startIndex), 0), StandardCharsets.UTF_8);
-                    mSession.onCopyTextToClipboard(clipboardText);
+                   // mSession .onCopyTextToClipboard(clipboardText);
                 } catch (Exception e) {
                     Logger.logError(mClient, LOG_TAG, "OSC Manipulate selection, invalid string '" + textParameter + "");
                 }
@@ -2003,7 +2014,7 @@ public final class TerminalEmulator {
                 // parameters are given, the entire table will be reset.
                 if (textParameter.isEmpty()) {
                     mColors.reset();
-                    mSession.onColorsChanged();
+                   // mSession.onColorsChanged();
                 } else {
                     int lastIndex = 0;
                     for (int charIndex = 0; ; charIndex++) {
@@ -2012,7 +2023,7 @@ public final class TerminalEmulator {
                             try {
                                 int colorToReset = Integer.parseInt(textParameter.substring(lastIndex, charIndex));
                                 mColors.reset(colorToReset);
-                                mSession.onColorsChanged();
+                               // mSession.onColorsChanged();
                                 if (endOfInput) break;
                                 charIndex++;
                                 lastIndex = charIndex;
@@ -2027,7 +2038,7 @@ public final class TerminalEmulator {
             case 111: // Reset background color.
             case 112: // Reset cursor color.
                 mColors.reset(TextStyle.COLOR_INDEX_FOREGROUND + (value - 110));
-                mSession.onColorsChanged();
+               // mSession.onColorsChanged();
                 break;
             case 119: // Reset highlight color.
                 break;
@@ -2436,7 +2447,7 @@ public final class TerminalEmulator {
         mUtf8Index = mUtf8ToFollow = 0;
 
         mColors.reset();
-        mSession.onColorsChanged();
+       // mSession.onColorsChanged();
     }
 
     public String getSelectedText(int x1, int y1, int x2, int y2) {
@@ -2453,7 +2464,7 @@ public final class TerminalEmulator {
         String oldTitle = mTitle;
         mTitle = newTitle;
         if (!Objects.equals(oldTitle, newTitle)) {
-            mSession.titleChanged(oldTitle, newTitle);
+           // mSession.titleChanged(oldTitle, newTitle);
         }
     }
 
@@ -2466,9 +2477,9 @@ public final class TerminalEmulator {
 
         // Then: Implement bracketed paste mode if enabled:
         boolean bracketed = isDecsetInternalBitSet(DECSET_BIT_BRACKETED_PASTE_MODE);
-        if (bracketed) mSession.write("\033[200~");
-        mSession.write(text);
-        if (bracketed) mSession.write("\033[201~");
+       // if (bracketed) mSession.write("\033[200~");
+      //  mSession.write(text);
+       // if (bracketed) mSession.write("\033[201~");
     }
 
     /** http://www.vt100.net/docs/vt510-rm/DECSC */

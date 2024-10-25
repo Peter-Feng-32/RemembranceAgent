@@ -7,6 +7,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.remembranceagent.RemembranceAgentService
 
 
 @Composable
@@ -16,7 +17,6 @@ fun MainScreen(
     initialIndexPath: String = "",
     savePreference: (String, String) -> Unit = {k, v -> },
     indexDocuments: () -> Unit = {},
-    remembranceAgentStarted: Boolean = false,
     startRemembranceAgent: () -> Unit = {},
     stopRemembranceAgent: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -24,6 +24,21 @@ fun MainScreen(
     var apiKey by remember { mutableStateOf(initialApiKey) }
     var documentsPathString by remember { mutableStateOf(initialDocumentsPath) }
     var indexPathString by remember { mutableStateOf(initialIndexPath) }
+
+    var remembranceAgentRunning by remember { mutableStateOf(RemembranceAgentService.isRunning) }
+
+    // Register a listener to observe changes
+    DisposableEffect(Unit) {
+        val listener: (Boolean) -> Unit = { newValue ->
+            remembranceAgentRunning = newValue
+        }
+        RemembranceAgentService.addListener(listener)
+
+        onDispose {
+            // Clean up listeners if necessary (not implemented here)
+            RemembranceAgentService.removeListener (listener)
+        }
+    }
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -44,7 +59,7 @@ fun MainScreen(
             Button(onClick = indexDocuments) {
                 Text(text = "Index Documents")
             }
-            if (remembranceAgentStarted) {
+            if (remembranceAgentRunning) {
                 Button(onClick = stopRemembranceAgent) {
                     Text(text = "Stop Remembrance Agent")
                 }

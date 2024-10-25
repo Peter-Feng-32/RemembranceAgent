@@ -11,38 +11,69 @@ import android.os.IBinder
 import android.text.Spanned
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.ui.text.font.Typeface
 import com.example.remembranceagent.retrieval.Retriever
 import com.example.remembranceagent.ui.GOOGLE_CLOUD_API_KEY
 import com.example.remembranceagent.ui.INDEX_PATH_STRING
-import com.google.audio.CodecAndBitrate
+import com.example.remembranceagent.z100.Z100Renderer
 import com.google.audio.NetworkConnectionChecker
 import com.google.audio.asr.*
-import com.google.audio.asr.TranscriptionResultUpdatePublisher.ResultSource
-import com.google.audio.asr.TranscriptionResultUpdatePublisher.UpdateType
-import com.google.audio.asr.cloud.CloudSpeechSessionFactory
 import com.google.audio.asr.SpeechRecognitionModelOptions.SpecificModel.DICTATION_DEFAULT
 import com.google.audio.asr.SpeechRecognitionModelOptions.SpecificModel.VIDEO
 import com.google.audio.asr.TranscriptionResultFormatterOptions.TranscriptColoringStyle.NO_COLORING
+import com.google.audio.asr.TranscriptionResultUpdatePublisher.ResultSource
+import com.google.audio.asr.TranscriptionResultUpdatePublisher.UpdateType
+import com.google.audio.asr.cloud.CloudSpeechSessionFactory
+import com.termux.terminal.TerminalEmulator
+import com.vuzix.ultralite.UltraliteSDK
 import org.apache.lucene.document.Document
-import org.apache.lucene.search.ScoreDoc
+import kotlin.math.max
 
 class RemembranceAgentService : Service() {
 
     companion object {
         const val TAG = "RemembranceAgentService"
+        var isRunning: Boolean = false
+            set(value) {
+                field = value
+                notifyListeners(value)
+            }
+
+        private val listeners = mutableListOf<(Boolean) -> Unit>()
+
+        fun addListener(listener: (Boolean) -> Unit) {
+            listeners.add(listener)
+        }
+
+        private fun notifyListeners(value: Boolean) {
+            for (listener in listeners) {
+                listener(value)
+            }
+        }
+
+        fun removeListener(listener: (Boolean) -> Unit) {
+            listeners.remove(listener)
+        }
+
     }
     var apiKey = ""
     var indexPath = ""
+    lateinit var ultraliteSDK: UltraliteSDK
+    lateinit var z100Renderer: Z100Renderer
+    lateinit var terminalEmulator: TerminalEmulator
 
-    @RequiresApi(api = Build.VERSION_CODES.P)
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        apiKey = intent?.getStringExtra(GOOGLE_CLOUD_API_KEY) ?: "AIzaSyAIkVt1c10eZ-A5DdKXH48jtfmRgDAPHsg"
+        indexPath = intent?.getStringExtra(INDEX_PATH_STRING) ?: ""
+        ultraliteSDK = UltraliteSDK.get(this)
+        initTerminalEmulator()
+
         initLanguageLocale()
         constructRepeatingRecognitionSession()
         startRecording()
 
-        apiKey = intent?.getStringExtra(GOOGLE_CLOUD_API_KEY) ?: ""
-        indexPath = intent?.getStringExtra(INDEX_PATH_STRING) ?: ""
-        retriever = Retriever(indexPath)
+
+        // retriever = Retriever(indexPath)
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -78,15 +109,20 @@ class RemembranceAgentService : Service() {
 
     private val transcriptUpdater =
         TranscriptionResultUpdatePublisher { formattedTranscript: Spanned, updateType: UpdateType ->
-            Log.w("Handle", "Transcript")
+            val clearScreenSequence = "\u001B[2J\u001B[H"
+            Log.w(TAG, "Transcript: " + formattedTranscript)
+            terminalEmulator.append(clearScreenSequence.toByteArray(), clearScreenSequence.toByteArray().size)
+            terminalEmulator.append(formattedTranscript.toString().toByteArray(), formattedTranscript.toString().toByteArray().size)
+            z100Renderer.renderToZ100(terminalEmulator, 0)
             if (updateType == UpdateType.TRANSCRIPT_FINALIZED) {
-                handleTranscript(formattedTranscript.toString())
+                //handleTranscript(formattedTranscript.toString())
             }
         }
 
-    private fun handleTranscript(transcript: String) {
+    private fun handleTranscript(transcript: String) : String{
         val retrievedDoc: Document? = retriever.query(transcript)
         Log.w(TAG, "Retrieved: " + retrievedDoc?.get("Title"))
+        return retrievedDoc?.get("Title") ?: ""
     }
 
     private val readMicData = Runnable {
@@ -102,12 +138,35 @@ class RemembranceAgentService : Service() {
         recognizer!!.stop()
     }
 
+    override fun onCreate() {
+        isRunning = true
+        super.onCreate()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         if (audioRecord != null) {
             audioRecord!!.stop()
         }
+        isRunning = false
     }
+
+    private fun initTerminalEmulator() {
+        val viewWidth = UltraliteSDK.Canvas.WIDTH
+        val viewHeight = UltraliteSDK.Canvas.HEIGHT
+        z100Renderer = Z100Renderer(10, android.graphics.Typeface.MONOSPACE, ultraliteSDK)
+
+        // Set to 80 and 24 if you want to enable vttest.
+        val newColumns =
+            max(4.0, ((viewWidth / z100Renderer.mFontWidth).toInt()).toDouble()).toInt()
+        val newRows = Math.max(
+            4,
+            (viewHeight - z100Renderer.mFontLineSpacingAndAscent) / z100Renderer.mFontLineSpacing
+        )
+
+        terminalEmulator = TerminalEmulator(newColumns, newRows, 2000)
+    }
+
 
     /** Captioning Functions  */
     private fun initLanguageLocale() {
@@ -128,9 +187,7 @@ class RemembranceAgentService : Service() {
             .setFilterProfanity(true)
             .setEncoderParams(
                 CloudSpeechSessionParams.EncoderParams.newBuilder()
-                    .setEnableEncoder(true)
-                    .setAllowVbr(true)
-                    .setCodec(CodecAndBitrate.UNDEFINED)
+                    .setEnableEncoder(false)
             )
             .build()
         networkChecker = NetworkConnectionChecker(this)

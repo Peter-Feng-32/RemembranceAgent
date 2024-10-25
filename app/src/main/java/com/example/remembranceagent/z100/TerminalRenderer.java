@@ -27,13 +27,13 @@ public class TerminalRenderer {
     private final Paint mTextPaint = new Paint();
 
     /** The width of a single mono spaced character obtained by {@link Paint#measureText(String)} on a single 'X'. */
-    final float mFontWidth;
+    public final float mFontWidth;
     /** The {@link Paint#getFontSpacing()}. See http://www.fampennings.nl/maarten/android/08numgrid/font.png */
-    final int mFontLineSpacing;
+    public final int mFontLineSpacing;
     /** The {@link Paint#ascent()}. See http://www.fampennings.nl/maarten/android/08numgrid/font.png */
     private final int mFontAscent;
     /** The {@link #mFontLineSpacing} + {@link #mFontAscent}. */
-    final int mFontLineSpacingAndAscent;
+    public final int mFontLineSpacingAndAscent;
 
     private final float[] asciiMeasures = new float[127];
 
