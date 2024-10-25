@@ -56,6 +56,12 @@ class Z100Renderer(textSize: Int, typeface: Typeface?, ultraliteSDK: UltraliteSD
     }
 
     fun renderToZ100(terminalEmulator: TerminalEmulator, topRow: Int) {
+        if (!ultraliteSDK.isControlledByMe) {
+            ultraliteSDK.requestControl()
+            ultraliteSDK.setLayout(Layout.CANVAS, 0, true)
+            ultraliteSDK.getCanvas().clearBackground()
+            ultraliteSDK.getCanvas().commit()
+        }
         val bitmap = Bitmap.createBitmap(
             UltraliteSDK.Canvas.WIDTH,
             UltraliteSDK.Canvas.HEIGHT,

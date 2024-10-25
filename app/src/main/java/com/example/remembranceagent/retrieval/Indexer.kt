@@ -1,5 +1,6 @@
 package com.example.remembranceagent.retrieval
 
+import android.content.SharedPreferences
 import android.os.Environment
 import org.apache.lucene.analysis.standard.StandardAnalyzer
 import org.apache.lucene.document.Document
@@ -8,7 +9,6 @@ import org.apache.lucene.document.TextField
 import org.apache.lucene.index.IndexWriter
 import org.apache.lucene.index.IndexWriterConfig
 import org.apache.lucene.store.FSDirectory
-import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.DirectoryStream
 import java.nio.file.Files
@@ -16,19 +16,46 @@ import java.nio.file.Path
 
 private val TAG = "Indexer"
 
-class Indexer {
-    private val indexWriter : IndexWriter;
-    constructor() {
-        val analyzer = StandardAnalyzer()
-        val index = FSDirectory.open(indexPath)
+class Indexer() {
+    private lateinit var indexWriter : IndexWriter;
 
+    init {
+        setupDirs()
+        val analyzer = StandardAnalyzer()
+        val index = FSDirectory.open(tempIndexPath)
         val indexWriterConfig = IndexWriterConfig(analyzer)
         indexWriter = IndexWriter(index, indexWriterConfig)
+
+    }
+
+    fun setupDirs() {
+        if (Files.notExists(tempIndexPath)) {
+            try {
+                Files.createDirectories(tempIndexPath)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        if (Files.notExists(indexPath)) {
+            try {
+                Files.createDirectories(indexPath)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        if (Files.notExists(documentsPath)) {
+            try {
+                Files.createDirectories(documentsPath)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     fun indexDocuments() {
         indexTxtDocuments()
         // Todo: Index other types of documents
+
     }
 
     private fun indexTxtDocuments() {

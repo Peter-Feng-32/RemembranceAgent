@@ -61,6 +61,7 @@ class RemembranceAgentService : Service() {
     lateinit var ultraliteSDK: UltraliteSDK
     lateinit var z100Renderer: Z100Renderer
     lateinit var terminalEmulator: TerminalEmulator
+    lateinit var safeTranscriptionResultFormatter: SafeTranscriptionResultFormatter
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         apiKey = intent?.getStringExtra(GOOGLE_CLOUD_API_KEY) ?: "AIzaSyAIkVt1c10eZ-A5DdKXH48jtfmRgDAPHsg"
@@ -115,7 +116,8 @@ class RemembranceAgentService : Service() {
             terminalEmulator.append(formattedTranscript.toString().toByteArray(), formattedTranscript.toString().toByteArray().size)
             z100Renderer.renderToZ100(terminalEmulator, 0)
             if (updateType == UpdateType.TRANSCRIPT_FINALIZED) {
-                //handleTranscript(formattedTranscript.toString())
+                val retrieved = handleTranscript(formattedTranscript.toString())
+                Log.w(TAG, "Retrieved Title: " + retrieved)
             }
         }
 
@@ -154,7 +156,7 @@ class RemembranceAgentService : Service() {
     private fun initTerminalEmulator() {
         val viewWidth = UltraliteSDK.Canvas.WIDTH
         val viewHeight = UltraliteSDK.Canvas.HEIGHT
-        z100Renderer = Z100Renderer(10, android.graphics.Typeface.MONOSPACE, ultraliteSDK)
+        z100Renderer = Z100Renderer(30, android.graphics.Typeface.MONOSPACE, ultraliteSDK)
 
         // Set to 80 and 24 if you want to enable vttest.
         val newColumns =
@@ -198,10 +200,11 @@ class RemembranceAgentService : Service() {
             .setTranscriptColoringStyle(NO_COLORING)
             .build()
         factory = CloudSpeechSessionFactory(cloudParams, apiKey)
+        safeTranscriptionResultFormatter = SafeTranscriptionResultFormatter(formatterOptions)
         val recognizerBuilder = RepeatingRecognitionSession.newBuilder()
             .setSpeechSessionFactory(factory)
             .setSampleRateHz(SAMPLE_RATE)
-            .setTranscriptionResultFormatter(SafeTranscriptionResultFormatter(formatterOptions))
+            .setTranscriptionResultFormatter(safeTranscriptionResultFormatter)
             .setSpeechRecognitionModelOptions(options)
             .setNetworkConnectionChecker(networkChecker)
         recognizer = recognizerBuilder.build()
