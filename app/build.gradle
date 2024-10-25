@@ -81,8 +81,9 @@ dependencies {
     implementation 'com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava'
 
     // Lucene
-    implementation 'org.apache.lucene:lucene-core:7.3.0'
+    implementation 'org.apache.lucene:lucene-core:5.5.4'
     implementation 'org.apache.lucene:lucene-queryparser:4.0.0'
+    implementation 'org.apache.lucene:lucene-analyzers-common:5.5.4'
 
     // POI
     implementation 'org.apache.poi:poi:3.9'

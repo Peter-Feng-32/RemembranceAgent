@@ -12,7 +12,10 @@ import android.text.Spanned
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.text.font.Typeface
+import com.example.remembranceagent.retrieval.RetrievedResult
 import com.example.remembranceagent.retrieval.Retriever
+import com.example.remembranceagent.retrieval.indexPath
+import com.example.remembranceagent.retrieval.tempIndexPath
 import com.example.remembranceagent.ui.GOOGLE_CLOUD_API_KEY
 import com.example.remembranceagent.ui.INDEX_PATH_STRING
 import com.example.remembranceagent.z100.Z100Renderer
@@ -27,6 +30,7 @@ import com.google.audio.asr.cloud.CloudSpeechSessionFactory
 import com.termux.terminal.TerminalEmulator
 import com.vuzix.ultralite.UltraliteSDK
 import org.apache.lucene.document.Document
+import java.util.Locale
 import kotlin.math.max
 
 class RemembranceAgentService : Service() {
@@ -57,15 +61,16 @@ class RemembranceAgentService : Service() {
 
     }
     var apiKey = ""
-    var indexPath = ""
+    var indexPathString = ""
     lateinit var ultraliteSDK: UltraliteSDK
     lateinit var z100Renderer: Z100Renderer
     lateinit var terminalEmulator: TerminalEmulator
     lateinit var safeTranscriptionResultFormatter: SafeTranscriptionResultFormatter
+    lateinit var retriever: Retriever
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         apiKey = intent?.getStringExtra(GOOGLE_CLOUD_API_KEY) ?: "AIzaSyAIkVt1c10eZ-A5DdKXH48jtfmRgDAPHsg"
-        indexPath = intent?.getStringExtra(INDEX_PATH_STRING) ?: ""
+        indexPathString = intent?.getStringExtra(INDEX_PATH_STRING) ?: indexPath.toString()
         ultraliteSDK = UltraliteSDK.get(this)
         initTerminalEmulator()
 
@@ -74,7 +79,7 @@ class RemembranceAgentService : Service() {
         startRecording()
 
 
-        // retriever = Retriever(indexPath)
+        retriever = Retriever(indexPathString)
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -106,25 +111,29 @@ class RemembranceAgentService : Service() {
     private var networkChecker: NetworkConnectionChecker? = null
     private var factory: CloudSpeechSessionFactory? = null
 
-    lateinit var retriever: Retriever
 
     private val transcriptUpdater =
         TranscriptionResultUpdatePublisher { formattedTranscript: Spanned, updateType: UpdateType ->
-            val clearScreenSequence = "\u001B[2J\u001B[H"
             Log.w(TAG, "Transcript: " + formattedTranscript)
-            terminalEmulator.append(clearScreenSequence.toByteArray(), clearScreenSequence.toByteArray().size)
-            terminalEmulator.append(formattedTranscript.toString().toByteArray(), formattedTranscript.toString().toByteArray().size)
-            z100Renderer.renderToZ100(terminalEmulator, 0)
+            // terminalEmulator.append(clearScreenSequence.toByteArray(), clearScreenSequence.toByteArray().size)
+            // terminalEmulator.append(formattedTranscript.toString().toByteArray(), formattedTranscript.toString().toByteArray().size)
             if (updateType == UpdateType.TRANSCRIPT_FINALIZED) {
-                val retrieved = handleTranscript(formattedTranscript.toString())
-                Log.w(TAG, "Retrieved Title: " + retrieved)
+                handleTranscript(formattedTranscript.toString())
+                recognizer?.resetAndClearTranscript()
             }
         }
 
-    private fun handleTranscript(transcript: String) : String{
-        val retrievedDoc: Document? = retriever.query(transcript)
-        Log.w(TAG, "Retrieved: " + retrievedDoc?.get("Title"))
-        return retrievedDoc?.get("Title") ?: ""
+    private fun handleTranscript(transcript: String) {
+        val retrievedResult: RetrievedResult = retriever.query(transcript) ?: return
+
+        Log.w(TAG, "Retrieved: " + retrievedResult?.title + " with score: " + retrievedResult?.score)
+
+        val clearScreenSequence = "\u001B[2J\u001B[H"
+        val formattedString = String.format(Locale.ENGLISH, "%.4f", retrievedResult.score) + " | " + retrievedResult.title
+
+        terminalEmulator.append(clearScreenSequence.toByteArray(), clearScreenSequence.toByteArray().size)
+        terminalEmulator.append(formattedString.toByteArray(), formattedString.toByteArray().size)
+        z100Renderer.renderToZ100(terminalEmulator, 0)
     }
 
     private val readMicData = Runnable {

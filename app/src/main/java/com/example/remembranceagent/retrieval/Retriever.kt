@@ -1,6 +1,7 @@
 package com.example.remembranceagent.retrieval
 
 import android.util.Log
+import org.apache.lucene.analysis.en.EnglishAnalyzer
 import org.apache.lucene.analysis.standard.StandardAnalyzer
 import org.apache.lucene.document.Document
 import org.apache.lucene.index.DirectoryReader
@@ -17,33 +18,34 @@ import kotlin.io.path.Path
 private val TAG = "Retriever"
 // Todo: Make indexPath something that the user sets.  Fail gracefully if it can't be accessed.
 // Todo: Represent documents with interfaces and classes.
-class Retriever {
-    lateinit var indexPath: String
-    constructor(indexPath: String) {
-        this.indexPath = indexPath
-    }
+class Retriever(val indexPath: String) {
     val index: FSDirectory = FSDirectory.open(Path(this.indexPath))
 
-    fun query(queryString: String): Document? {
+    fun query(queryString: String): RetrievedResult? {
         val reader: IndexReader = DirectoryReader.open(index)
         val searcher = IndexSearcher(reader)
 
         val moreLikeThis = MoreLikeThis(reader)
-        moreLikeThis.fieldNames = arrayOf("content") // The field(s) to use for similarity
-        moreLikeThis.minTermFreq = 1 // Minimum term frequency
+        moreLikeThis.analyzer = EnglishAnalyzer()
+        moreLikeThis.fieldNames = arrayOf("Content") // The field(s) to use for similarity
+        moreLikeThis.minTermFreq = 0 // Minimum term frequency
         moreLikeThis.minDocFreq = 1 // Minimum document frequency
-        val topDocs = searcher.search(moreLikeThis.like(StringReader(queryString), "content"), 1)
+
+        val topDocs = searcher.search(moreLikeThis.like(StringReader(queryString), "Content"), 1)
 
         // Iterate over topDocs to get the similar documents
         for (i in topDocs.scoreDocs.indices) {
             Log.w(TAG, "Doc ID: " + topDocs.scoreDocs[i].doc + " Score: " + topDocs.scoreDocs[i].score)
         }
         return if (topDocs.scoreDocs.isNotEmpty()) {
-            searcher.doc(topDocs.scoreDocs[0].doc)
+            RetrievedResult(title = searcher.doc(topDocs.scoreDocs[0].doc).get("Title"), score=topDocs.scoreDocs[0].score)
         } else {
             null
         }
 
     }
 
+}
+
+data class RetrievedResult(val title: String, val score: Float) {
 }

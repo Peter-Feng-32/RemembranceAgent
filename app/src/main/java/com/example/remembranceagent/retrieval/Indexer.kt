@@ -2,7 +2,8 @@ package com.example.remembranceagent.retrieval
 
 import android.content.SharedPreferences
 import android.os.Environment
-import org.apache.lucene.analysis.standard.StandardAnalyzer
+import android.util.Log
+import org.apache.lucene.analysis.en.EnglishAnalyzer
 import org.apache.lucene.document.Document
 import org.apache.lucene.document.Field
 import org.apache.lucene.document.TextField
@@ -21,8 +22,8 @@ class Indexer() {
 
     init {
         setupDirs()
-        val analyzer = StandardAnalyzer()
-        val index = FSDirectory.open(tempIndexPath)
+        val analyzer = EnglishAnalyzer()
+        val index = FSDirectory.open(indexPath)
         val indexWriterConfig = IndexWriterConfig(analyzer)
         indexWriter = IndexWriter(index, indexWriterConfig)
 
@@ -53,23 +54,33 @@ class Indexer() {
     }
 
     fun indexDocuments() {
-        indexTxtDocuments()
+        indexTxtDocuments(documentsPath)
         // Todo: Index other types of documents
 
     }
 
-    private fun indexTxtDocuments() {
-        Files.newDirectoryStream(documentsPath, "*.txt").use { stream: DirectoryStream<Path> ->
+    private fun indexTxtDocuments(documentsPath: Path) {
+        Log.w(TAG, "Indexing txt documents")
+        Files.newDirectoryStream(documentsPath).use { stream: DirectoryStream<Path> ->
             for (file in stream) {
-                // Get the title (file name without extension)
-                val title = file.fileName.toString().removeSuffix(".txt")
-                // Read the content of the file
-                val content = String(Files.readAllBytes(file), StandardCharsets.UTF_8)
-                // Get the file path
-                val filePath = file.toAbsolutePath().toString()
+                if(Files.isDirectory(file)) {
+                    Log.w(TAG, "is directory: " )
+                    indexTxtDocuments(file)
+                }
+                else if (file.fileName.toString().endsWith(".txt")) {
+                    // Get the title (file name without extension)
+                    val title = file.fileName.toString().removeSuffix(".txt")
+                    Log.w(TAG, "Indexing document with title " + title)
 
-                val document = createTxtDocument(title, content, filePath)
-                indexWriter.addDocument(document)
+                    // Read the content of the file
+                    val content = String(Files.readAllBytes(file), StandardCharsets.UTF_8)
+                    // Get the file path
+                    val filePath = file.toAbsolutePath().toString()
+
+                    val document = createTxtDocument(title, content, filePath)
+                    indexWriter.addDocument(document)
+                }
+
             }
         }
     }
@@ -78,7 +89,7 @@ class Indexer() {
     private fun createTxtDocument(title: String, content: String, filePath: String) : Document{
         val document = Document()
         document.add(TextField("Title", title, Field.Store.YES))
-        document.add(TextField("Content", content, Field.Store.NO))
+        document.add(TextField("Content", content, Field.Store.YES))
         document.add(TextField("FilePath", filePath, Field.Store.YES))
         return document
     }
