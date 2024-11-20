@@ -8,36 +8,53 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.remembranceagent.RemembranceAgentService
+import com.example.remembranceagent.RetrieverService
+import com.example.remembranceagent.retrieval.Indexer
 
 
 @Composable
 fun MainScreen(
     initialApiKey: String = "",
     initialDocumentsPath: String = "",
-    initialIndexPath: String = "",
+    getIndexPath: () -> String = {""},
     savePreference: (String, String) -> Unit = {k, v -> },
     indexDocuments: () -> Unit = {},
     startRemembranceAgent: () -> Unit = {},
     stopRemembranceAgent: () -> Unit = {},
+    startRetriever: () -> Unit = {},
+    stopRetriever: () -> Unit = {},
     saveSettings: () -> Unit = {},
     modifier: Modifier = Modifier
     ) {
     var apiKey by remember { mutableStateOf(initialApiKey) }
     var documentsPathString by remember { mutableStateOf(initialDocumentsPath) }
-    var indexPathString by remember { mutableStateOf(initialIndexPath) }
+    var indexPathString by remember { mutableStateOf(getIndexPath()) }
 
     var remembranceAgentRunning by remember { mutableStateOf(RemembranceAgentService.isRunning) }
+    var retrieverRunning by remember { mutableStateOf(RetrieverService.isRunning) }
 
     // Register a listener to observe changes
     DisposableEffect(Unit) {
-        val listener: (Boolean) -> Unit = { newValue ->
+        val remembranceAgentListener: (Boolean) -> Unit = { newValue ->
             remembranceAgentRunning = newValue
         }
-        RemembranceAgentService.addListener(listener)
+        val retrieverListener: (Boolean) -> Unit = { newValue ->
+            retrieverRunning = newValue
+        }
+
+        val indexPathListener: () -> Unit = {
+            indexPathString = getIndexPath()
+        }
+
+        RemembranceAgentService.addListener(remembranceAgentListener)
+        RetrieverService.addListener(retrieverListener)
+        Indexer.addListener(indexPathListener)
 
         onDispose {
             // Clean up listeners if necessary (not implemented here)
-            RemembranceAgentService.removeListener (listener)
+            RemembranceAgentService.removeListener (remembranceAgentListener)
+            RetrieverService.removeListener (retrieverListener)
+            Indexer.removeListener(indexPathListener)
         }
     }
 
@@ -83,6 +100,18 @@ fun MainScreen(
                     Text(text = "Start Remembrance Agent")
                 }
             }
+
+            if (retrieverRunning) {
+                Button(onClick = stopRetriever) {
+                    Text(text = "Stop Retriever")
+                }
+            } else {
+                Button(onClick = startRetriever) {
+                    Text(text = "Start Retriever")
+                }
+            }
+
+
         }
     }
 }

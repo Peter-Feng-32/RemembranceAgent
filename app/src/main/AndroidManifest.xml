@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" /> <!-- Permissions to read and write to external storage -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+
     <uses-permission
         android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         android:minSdkVersion="30" />
@@ -22,9 +24,15 @@
         android:theme="@style/Theme.RemembranceAgent"
         tools:targetApi="31">
         <service
-            android:name=".RemembranceAgentService"
+            android:name=".RetrieverService"
+            android:foregroundServiceType="dataSync"
             android:enabled="true"
             android:exported="true"></service>
+        <service
+            android:name=".RemembranceAgentService"
+            android:foregroundServiceType="microphone"
+            android:enabled="true"
+            android:exported="true" />
 
         <activity
             android:name=".MainActivity"

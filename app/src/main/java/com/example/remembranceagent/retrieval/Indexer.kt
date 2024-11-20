@@ -1,6 +1,8 @@
 package com.example.remembranceagent.retrieval
 
+import android.content.SharedPreferences
 import android.util.Log
+import com.example.remembranceagent.ui.INDEX_PATH_STRING_KEY
 import org.apache.lucene.analysis.en.EnglishAnalyzer
 import org.apache.lucene.document.Document
 import org.apache.lucene.document.Field
@@ -8,39 +10,53 @@ import org.apache.lucene.document.TextField
 import org.apache.lucene.index.IndexWriter
 import org.apache.lucene.index.IndexWriterConfig
 import org.apache.lucene.store.FSDirectory
+import org.apache.lucene.util.Version
+import java.io.File
+import java.io.FileFilter
 import java.nio.charset.StandardCharsets
 import java.nio.file.DirectoryStream
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 
 private val TAG = "Indexer"
 
-class Indexer(val indexPath: Path, val documentsPath: Path) {
-    private var indexWriter : IndexWriter;
+class Indexer(val preferences: SharedPreferences, val documentsPath: Path) {
+    companion object {
+        private val listeners = mutableListOf<() -> Unit>()
+        var lock = Object()
+
+        fun addListener(listener: () -> Unit) {
+            listeners.add(listener)
+        }
+
+        private fun notifyListeners() {
+            for (listener in listeners) {
+                listener()
+            }
+        }
+
+        fun removeListener(listener: () -> Unit) {
+            listeners.remove(listener)
+        }
+    }
+
+
+    val analyzer = EnglishAnalyzer(Version.LUCENE_47)
 
     init {
         setupDirs()
-        val analyzer = EnglishAnalyzer()
-        val index = FSDirectory.open(indexPath)
-        val indexWriterConfig = IndexWriterConfig(analyzer)
-        indexWriter = IndexWriter(index, indexWriterConfig)
     }
 
     fun setupDirs() {
-        if (Files.notExists(TEMP_INDEX_PATH)) {
+        if (Files.notExists(INDICES_PATH)) {
             try {
-                Files.createDirectories(TEMP_INDEX_PATH)
+                Files.createDirectories(INDICES_PATH)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
-        if (Files.notExists(indexPath)) {
-            try {
-                Files.createDirectories(indexPath)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
+
         if (Files.notExists(documentsPath)) {
             try {
                 Files.createDirectories(documentsPath)
@@ -50,18 +66,55 @@ class Indexer(val indexPath: Path, val documentsPath: Path) {
         }
     }
 
-    fun indexDocuments() {
-        indexTxtDocuments(documentsPath)
-        // Todo: Index other types of documents
+    fun getLatestIndexName(): String{
+        val indicesDir = FSDirectory.open(INDICES_PATH.toFile())
+        val indices: List<String> =
+            indicesDir.directory.listFiles { it: File -> it.isDirectory }?.map { it.name } ?: emptyList()
+        var versionNum = 0
+        val latestIndexDirName = indices.lastOrNull()
+        if (latestIndexDirName != null) {
+            val latestVersionNum: Int? = (latestIndexDirName.split("_").getOrNull(1))?.toIntOrNull()
+            if (latestVersionNum != null) {
+                versionNum = latestVersionNum + 1
+            }
+        }
+        return "${INDEX_NAME}_${versionNum}"
     }
 
-    private fun indexTxtDocuments(documentsPath: Path) {
+    fun indexDocuments() {
+        synchronized(lock) {
+            val latestIndexName = getLatestIndexName()
+            val newIndexDirPath = Paths.get(INDICES_PATH.toString(), latestIndexName)
+            val newIndexDir = FSDirectory.open(newIndexDirPath.toFile())
+
+            val indexWriterConfig = IndexWriterConfig(Version.LUCENE_47, analyzer)
+            var indexWriter: IndexWriter? = null
+            try {
+                indexWriter = IndexWriter(newIndexDir, indexWriterConfig)
+                indexTxtDocuments(documentsPath, indexWriter)
+                indexWriter.close()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                indexWriter?.close()
+            }
+
+            // Todo: Index other types of documents
+
+            // Cleanup: Change latest index path.
+            preferences.edit().putString(INDEX_PATH_STRING_KEY, newIndexDirPath.toString()).commit()
+            notifyListeners()
+        }
+
+    }
+
+    private fun indexTxtDocuments(documentsPath: Path, indexWriter: IndexWriter) {
         Log.w(TAG, "Indexing txt documents")
         Files.newDirectoryStream(documentsPath).use { stream: DirectoryStream<Path> ->
             for (file in stream) {
                 if(Files.isDirectory(file)) {
                     Log.w(TAG, "is directory: " )
-                    indexTxtDocuments(file)
+                    indexTxtDocuments(file, indexWriter)
                 }
                 else if (file.fileName.toString().endsWith(".txt")) {
                     // Get the title (file name without extension)
@@ -88,9 +141,5 @@ class Indexer(val indexPath: Path, val documentsPath: Path) {
         document.add(TextField("Content", content, Field.Store.YES))
         document.add(TextField("FilePath", filePath, Field.Store.YES))
         return document
-    }
-
-    fun close() {
-        indexWriter.close()
     }
 }

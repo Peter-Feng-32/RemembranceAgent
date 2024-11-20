@@ -1,6 +1,8 @@
 package com.example.remembranceagent
 
 import android.annotation.SuppressLint
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.media.AudioFormat
@@ -9,26 +11,28 @@ import android.media.MediaRecorder
 import android.os.IBinder
 import android.text.Spanned
 import android.util.Log
-import com.example.remembranceagent.retrieval.RetrievedResult
-import com.example.remembranceagent.retrieval.Retriever
-import com.example.remembranceagent.retrieval.DOCUMENTS_PATH
-import com.example.remembranceagent.retrieval.INDEX_PATH
-import com.example.remembranceagent.ui.DOCUMENTS_PATH_STRING_KEY
+import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
+import com.example.remembranceagent.RetrieverService.Companion
 import com.example.remembranceagent.ui.GOOGLE_CLOUD_API_KEY
-import com.example.remembranceagent.ui.INDEX_PATH_STRING_KEY
-import com.example.remembranceagent.z100.Z100Renderer
 import com.google.audio.NetworkConnectionChecker
-import com.google.audio.asr.*
+import com.google.audio.asr.CloudSpeechSessionParams
+import com.google.audio.asr.CloudSpeechStreamObserverParams
+import com.google.audio.asr.RepeatingRecognitionSession
+import com.google.audio.asr.SafeTranscriptionResultFormatter
+import com.google.audio.asr.SpeechRecognitionModelOptions
 import com.google.audio.asr.SpeechRecognitionModelOptions.SpecificModel.DICTATION_DEFAULT
 import com.google.audio.asr.SpeechRecognitionModelOptions.SpecificModel.VIDEO
+import com.google.audio.asr.TranscriptionResultFormatterOptions
 import com.google.audio.asr.TranscriptionResultFormatterOptions.TranscriptColoringStyle.NO_COLORING
+import com.google.audio.asr.TranscriptionResultUpdatePublisher
 import com.google.audio.asr.TranscriptionResultUpdatePublisher.ResultSource
 import com.google.audio.asr.TranscriptionResultUpdatePublisher.UpdateType
 import com.google.audio.asr.cloud.CloudSpeechSessionFactory
-import com.termux.terminal.TerminalEmulator
-import com.vuzix.ultralite.UltraliteSDK
-import java.util.Locale
-import kotlin.math.max
+import java.io.OutputStream
+import java.net.Socket
+import kotlin.concurrent.thread
+
 
 class RemembranceAgentService : Service() {
 
@@ -55,33 +59,39 @@ class RemembranceAgentService : Service() {
         fun removeListener(listener: (Boolean) -> Unit) {
             listeners.remove(listener)
         }
-
     }
-    var apiKey = ""
-    var indexPathString = ""
-    var documentsPathString = ""
+    private var apiKey = ""
 
-    lateinit var ultraliteSDK: UltraliteSDK
-    lateinit var z100Renderer: Z100Renderer
-    lateinit var terminalEmulator: TerminalEmulator
     lateinit var safeTranscriptionResultFormatter: SafeTranscriptionResultFormatter
-    lateinit var retriever: Retriever
-    var previousUpdateTimestamp: Long = 0
-    var queryGap: Long = 5000
+    private var previousUpdateTimestamp: Long = 0
+    private var queryGap: Long = 1000
+
+    private val SERVER_HOST = "127.0.0.1"
+    private val SERVER_PORT = 9999
+    private lateinit var socket: Socket
+    val CHANNEL_ID = "CAPTIONING_CHANNEL"
+
+    fun createNotificationChannel() {
+        val name = "Captioning Channel"
+        val descriptionText = "Channel for notifications from Captioning"
+        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        val mChannel = NotificationChannel(CHANNEL_ID, name, importance)
+        mChannel.description = descriptionText
+        // Register the channel with the system. You can't change the importance
+        // or other notification behaviors after this.
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(mChannel)
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        apiKey = intent?.getStringExtra(GOOGLE_CLOUD_API_KEY) ?: "AIzaSyDM2w_vhjkl36iOOd9Vr-1A7C7-1mb4j7A"
-        indexPathString = intent?.getStringExtra(INDEX_PATH_STRING_KEY) ?: INDEX_PATH.toString()
-        documentsPathString = intent?.getStringExtra(DOCUMENTS_PATH_STRING_KEY) ?: DOCUMENTS_PATH.toString()
+        createNotificationChannel()
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID).build()
+        ServiceCompat.startForeground(this, 2, notification, foregroundServiceType)
 
-        ultraliteSDK = UltraliteSDK.get(this)
-        initTerminalEmulator()
-
+        apiKey = intent?.getStringExtra(GOOGLE_CLOUD_API_KEY) ?: "API KEY HERE"
         initLanguageLocale()
         constructRepeatingRecognitionSession()
         startRecording()
-
-        retriever = Retriever(indexPathString, documentsPathString)
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -89,7 +99,6 @@ class RemembranceAgentService : Service() {
         // No binding is provided, so return null for started services
         return null
     }
-
     /** Captioning Library stuff  */
     private val PERMISSIONS_REQUEST_RECORD_AUDIO = 1
 
@@ -113,12 +122,11 @@ class RemembranceAgentService : Service() {
     private var networkChecker: NetworkConnectionChecker? = null
     private var factory: CloudSpeechSessionFactory? = null
 
+    private lateinit var outputStream: OutputStream
 
     private val transcriptUpdater =
         TranscriptionResultUpdatePublisher { formattedTranscript: Spanned, updateType: UpdateType ->
-            Log.w(TAG, "Transcript: " + formattedTranscript)
-            // terminalEmulator.append(clearScreenSequence.toByteArray(), clearScreenSequence.toByteArray().size)
-            // terminalEmulator.append(formattedTranscript.toString().toByteArray(), formattedTranscript.toString().toByteArray().size)
+            Log.w(TAG, "Transcript: $formattedTranscript")
             val currTimestamp = System.currentTimeMillis()
             if (System.currentTimeMillis() - previousUpdateTimestamp > queryGap) {
                 handleTranscript(formattedTranscript.toString())
@@ -131,17 +139,27 @@ class RemembranceAgentService : Service() {
             }
         }
 
+    private fun connectSocket() {
+        socket = Socket(SERVER_HOST, SERVER_PORT)
+    }
+
     private fun handleTranscript(transcript: String) {
-        val retrievedResult: RetrievedResult = retriever.query(transcript) ?: return
-
-        Log.w(TAG, "Retrieved: " + retrievedResult?.title + " with score: " + retrievedResult?.score)
-
-        val clearScreenSequence = "\u001B[2J\u001B[H"
-        val formattedString = String.format(Locale.ENGLISH, "%.4f", retrievedResult.score) + " | " + retrievedResult.title
-
-        terminalEmulator.append(clearScreenSequence.toByteArray(), clearScreenSequence.toByteArray().size)
-        terminalEmulator.append(formattedString.toByteArray(), formattedString.toByteArray().size)
-        z100Renderer.renderToZ100(terminalEmulator, 0)
+        thread{
+            try {
+                outputStream = socket.getOutputStream()
+                outputStream.write(("$transcript\n").toByteArray())
+                outputStream.flush()
+            } catch (e: Exception) {
+                try {
+                    connectSocket()
+                    outputStream = socket.getOutputStream()
+                    outputStream.write(("$transcript\n").toByteArray())
+                    outputStream.flush()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
     }
 
     private val readMicData = Runnable {
@@ -163,29 +181,16 @@ class RemembranceAgentService : Service() {
     }
 
     override fun onDestroy() {
+        Log.w(TAG, "Destroy")
         super.onDestroy()
         if (audioRecord != null) {
             audioRecord!!.stop()
         }
+        if(this::socket.isInitialized && !socket.isClosed) {
+            socket.close()
+        }
         isRunning = false
     }
-
-    private fun initTerminalEmulator() {
-        val viewWidth = UltraliteSDK.Canvas.WIDTH
-        val viewHeight = UltraliteSDK.Canvas.HEIGHT
-        z100Renderer = Z100Renderer(30, android.graphics.Typeface.MONOSPACE, ultraliteSDK)
-
-        // Set to 80 and 24 if you want to enable vttest.
-        val newColumns =
-            max(4.0, ((viewWidth / z100Renderer.mFontWidth).toInt()).toDouble()).toInt()
-        val newRows = Math.max(
-            4,
-            (viewHeight - z100Renderer.mFontLineSpacingAndAscent) / z100Renderer.mFontLineSpacing
-        )
-
-        terminalEmulator = TerminalEmulator(newColumns, newRows, 2000)
-    }
-
 
     /** Captioning Functions  */
     private fun initLanguageLocale() {

@@ -11,6 +11,7 @@ import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser
 import org.apache.lucene.search.IndexSearcher
 import org.apache.lucene.search.ScoreDoc
 import org.apache.lucene.store.FSDirectory
+import org.apache.lucene.util.Version
 import java.io.StringReader
 import kotlin.io.path.Path
 
@@ -19,19 +20,19 @@ private val TAG = "Retriever"
 // Todo: Make indexPath something that the user sets.  Fail gracefully if it can't be accessed.
 // Todo: Represent documents with interfaces and classes.
 class Retriever(val indexPathString: String, val documentPathString: String) {
-    val index: FSDirectory = FSDirectory.open(Path(this.indexPathString))
+    val index: FSDirectory = FSDirectory.open(Path(this.indexPathString).toFile())
 
     fun query(queryString: String): RetrievedResult? {
         val reader: IndexReader = DirectoryReader.open(index)
         val searcher = IndexSearcher(reader)
 
         val moreLikeThis = MoreLikeThis(reader)
-        moreLikeThis.analyzer = EnglishAnalyzer()
+        moreLikeThis.analyzer = EnglishAnalyzer(Version.LUCENE_47)
         moreLikeThis.fieldNames = arrayOf("Content") // The field(s) to use for similarity
         moreLikeThis.minTermFreq = 0 // Minimum term frequency
         moreLikeThis.minDocFreq = 1 // Minimum document frequency
 
-        val topDocs = searcher.search(moreLikeThis.like(StringReader(queryString), "Content"), 1)
+        val topDocs = searcher.search(moreLikeThis.like(StringReader(queryString),"Content"), 1)
 
         // Iterate over topDocs to get the similar documents
         for (i in topDocs.scoreDocs.indices) {

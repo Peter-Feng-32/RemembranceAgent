@@ -5,6 +5,7 @@ import androidx.work.*
 import androidx.work.PeriodicWorkRequest
 import com.example.remembranceagent.ui.DOCUMENTS_PATH_STRING_KEY
 import com.example.remembranceagent.ui.INDEX_PATH_STRING_KEY
+import com.example.remembranceagent.ui.PREFERENCES_NAME
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
 
@@ -37,15 +38,12 @@ class IndexingScheduler() {
 class IndexingWorker(appContext: Context, workerParameters: WorkerParameters):
     Worker(appContext, workerParameters) {
     override fun doWork(): Result {
-        val indexPathString = inputData.getString(INDEX_PATH_STRING_KEY)
-        val indexPath = Paths.get(indexPathString)
-
         val documentsPathString = inputData.getString(DOCUMENTS_PATH_STRING_KEY)
         val documentsPath = Paths.get(documentsPathString)
+        val preferences = applicationContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
 
-        val indexer = Indexer(indexPath, documentsPath)
+        val indexer = Indexer(preferences = preferences, documentsPath)
         indexer.indexDocuments()
-        indexer.close()
         return Result.success()
     }
 }

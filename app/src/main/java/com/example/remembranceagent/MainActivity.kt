@@ -20,8 +20,10 @@ import com.example.remembranceagent.ui.DOCUMENTS_PATH_STRING_KEY
 import com.example.remembranceagent.ui.GOOGLE_CLOUD_API_KEY
 import com.example.remembranceagent.ui.INDEX_PATH_STRING_KEY
 import com.example.remembranceagent.ui.MainScreen
+import com.example.remembranceagent.ui.PREFERENCES_NAME
 import java.io.File
 import java.nio.file.Paths
+import kotlin.concurrent.thread
 
 class MainActivity : ComponentActivity() {
     val TAG = "MainActivity"
@@ -51,19 +53,21 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        preferences = getSharedPreferences("MyPreferences", Context.MODE_PRIVATE)
+        preferences = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
 
         setContent{
             MaterialTheme() {
                 MainScreen(
-                    initialApiKey = getPreference(GOOGLE_CLOUD_API_KEY, "AIzaSyDM2w_vhjkl36iOOd9Vr-1A7C7-1mb4j7A"),
+                    initialApiKey = getPreference(GOOGLE_CLOUD_API_KEY, "API KEY HERE"),
                     initialDocumentsPath = getPreference(DOCUMENTS_PATH_STRING_KEY, File(Environment.getExternalStorageDirectory().path, "documents").toPath().toString()),
-                    initialIndexPath = getPreference(INDEX_PATH_STRING_KEY, File(Environment.getExternalStorageDirectory().path, "index").toPath().toString()),
+                    getIndexPath = ::getIndexPath,
                     savePreference = ::setPreference,
                     saveSettings = ::saveSettings,
                     indexDocuments = ::indexDocuments,
                     startRemembranceAgent = ::startRemembranceAgent,
-                    stopRemembranceAgent = ::stopRemembranceAgent
+                    stopRemembranceAgent = ::stopRemembranceAgent,
+                    startRetriever = ::startRetriever,
+                    stopRetriever = ::stopRetriever,
                 )
             }
         }
@@ -71,6 +75,10 @@ class MainActivity : ComponentActivity() {
         val documentsPathString = getPreference(DOCUMENTS_PATH_STRING_KEY, File(Environment.getExternalStorageDirectory().path, "index").toPath().toString())
 
         scheduleIndexing(applicationContext, indexPathString, documentsPathString)
+    }
+
+    fun getIndexPath(): String {
+        return getPreference(INDEX_PATH_STRING_KEY, File(Environment.getExternalStorageDirectory().path, "index_0").toPath().toString())
     }
 
     fun saveSettings() {
@@ -81,11 +89,10 @@ class MainActivity : ComponentActivity() {
     }
 
     fun setPreference(key: String, value: String) {
-        Log.w(TAG, "Set KV: " + key + " : " + value)
         preferences.edit().putString(key, value).commit()
     }
 
-    fun getPreference(key: String, default: String): String {
+    private fun getPreference(key: String, default: String): String {
         return try{
             preferences.getString(key, default) as String
         } catch (e: java.lang.Exception) {
@@ -94,11 +101,11 @@ class MainActivity : ComponentActivity() {
     }
 
     fun indexDocuments() {
-        val indexPathString = getPreference(INDEX_PATH_STRING_KEY, File(Environment.getExternalStorageDirectory().path, "index").toPath().toString())
         val documentPathString = getPreference(DOCUMENTS_PATH_STRING_KEY, File(Environment.getExternalStorageDirectory().path, "documents").toPath().toString())
-        val indexer = Indexer(Paths.get(indexPathString), Paths.get(documentPathString))
-        indexer.indexDocuments()
-        indexer.close()
+        val indexer = Indexer(preferences, Paths.get(documentPathString))
+        thread {
+            indexer.indexDocuments()
+        }
     }
 
     fun startRemembranceAgent() {
@@ -106,11 +113,8 @@ class MainActivity : ComponentActivity() {
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) ==
             PackageManager.PERMISSION_GRANTED) {
                 val intent = Intent(this, RemembranceAgentService::class.java)
-                intent.putExtra(GOOGLE_CLOUD_API_KEY, getPreference(GOOGLE_CLOUD_API_KEY, "AIzaSyDM2w_vhjkl36iOOd9Vr-1A7C7-1mb4j7A"))
-                intent.putExtra(DOCUMENTS_PATH_STRING_KEY, getPreference(DOCUMENTS_PATH_STRING_KEY, File(Environment.getExternalStorageDirectory().path, "documents").toPath().toString()))
-                intent.putExtra(INDEX_PATH_STRING_KEY, getPreference(INDEX_PATH_STRING_KEY, File(Environment.getExternalStorageDirectory().path, "index").toPath().toString()),)
-
-            startService(intent)
+                intent.putExtra(GOOGLE_CLOUD_API_KEY, getPreference(GOOGLE_CLOUD_API_KEY, "API_KEY_HERE"))
+            startForegroundService(intent)
         } else {
             requestPermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
         }
@@ -118,6 +122,18 @@ class MainActivity : ComponentActivity() {
 
     fun stopRemembranceAgent() {
         val intent = Intent(this, RemembranceAgentService::class.java)
+        stopService(intent)
+    }
+
+    fun startRetriever() {
+        val intent = Intent(this, RetrieverService::class.java)
+        intent.putExtra(DOCUMENTS_PATH_STRING_KEY, getPreference(DOCUMENTS_PATH_STRING_KEY, File(Environment.getExternalStorageDirectory().path, "documents").toPath().toString()))
+        intent.putExtra(INDEX_PATH_STRING_KEY, getPreference(INDEX_PATH_STRING_KEY, ""),)
+        startForegroundService(intent)
+    }
+
+    fun stopRetriever() {
+        val intent = Intent(this, RetrieverService::class.java)
         stopService(intent)
     }
 

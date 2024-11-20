@@ -81,10 +81,10 @@ dependencies {
     implementation 'com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava'
 
     // Lucene
-    implementation 'org.apache.lucene:lucene-core:5.5.4'
-    implementation 'org.apache.lucene:lucene-queryparser:4.0.0'
-    implementation 'org.apache.lucene:lucene-analyzers-common:5.5.4'
-
+    implementation 'org.apache.lucene:lucene-core:4.7.0'
+    implementation 'org.apache.lucene:lucene-queryparser:4.7.0'
+    implementation 'org.apache.lucene:lucene-analyzers-common:4.7.0'
+    implementation 'org.apache.lucene:lucene-queries:4.7.0'
     // POI
     implementation 'org.apache.poi:poi:3.9'
 
@@ -116,6 +116,8 @@ dependencies {
     // Optional - Integration with activities
     implementation 'androidx.activity:activity-compose:1.9.2'
 
+    implementation 'androidx.lifecycle:lifecycle-service:2.8.7'
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.8.7"
 
 }
 
