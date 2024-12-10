@@ -138,7 +138,7 @@ class Indexer(val preferences: SharedPreferences, val documentsPath: Path) {
     private fun createTxtDocument(title: String, content: String, filePath: String) : Document{
         val document = Document()
         document.add(TextField("Title", title, Field.Store.YES))
-        document.add(TextField("Content", content, Field.Store.YES))
+        document.add(TextField("Content", content, Field.Store.NO))
         document.add(TextField("FilePath", filePath, Field.Store.YES))
         return document
     }

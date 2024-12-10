@@ -39,7 +39,7 @@ class Retriever(val indexPathString: String, val documentPathString: String) {
             Log.w(TAG, "Doc ID: " + topDocs.scoreDocs[i].doc + " Score: " + topDocs.scoreDocs[i].score)
         }
         return if (topDocs.scoreDocs.isNotEmpty()) {
-            RetrievedResult(title = searcher.doc(topDocs.scoreDocs[0].doc).get("Title"), score=topDocs.scoreDocs[0].score)
+            RetrievedResult(title = searcher.doc(topDocs.scoreDocs[0].doc).get("Title"), filePath = searcher.doc(topDocs.scoreDocs[0].doc).get("FilePath"), score=topDocs.scoreDocs[0].score)
         } else {
             null
         }
@@ -48,5 +48,5 @@ class Retriever(val indexPathString: String, val documentPathString: String) {
 
 }
 
-data class RetrievedResult(val title: String, val score: Float) {
+data class RetrievedResult(val title: String, val filePath: String, val score: Float) {
 }

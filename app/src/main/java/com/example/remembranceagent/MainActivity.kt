@@ -58,7 +58,7 @@ class MainActivity : ComponentActivity() {
         setContent{
             MaterialTheme() {
                 MainScreen(
-                    initialApiKey = getPreference(GOOGLE_CLOUD_API_KEY, "API KEY HERE"),
+                    initialApiKey = getPreference(GOOGLE_CLOUD_API_KEY, ""),
                     initialDocumentsPath = getPreference(DOCUMENTS_PATH_STRING_KEY, File(Environment.getExternalStorageDirectory().path, "documents").toPath().toString()),
                     getIndexPath = ::getIndexPath,
                     savePreference = ::setPreference,
@@ -113,7 +113,7 @@ class MainActivity : ComponentActivity() {
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) ==
             PackageManager.PERMISSION_GRANTED) {
                 val intent = Intent(this, RemembranceAgentService::class.java)
-                intent.putExtra(GOOGLE_CLOUD_API_KEY, getPreference(GOOGLE_CLOUD_API_KEY, "API_KEY_HERE"))
+                intent.putExtra(GOOGLE_CLOUD_API_KEY, getPreference(GOOGLE_CLOUD_API_KEY, ""))
             startForegroundService(intent)
         } else {
             requestPermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)

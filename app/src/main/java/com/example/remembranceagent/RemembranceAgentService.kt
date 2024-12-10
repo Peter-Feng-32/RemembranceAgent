@@ -88,7 +88,7 @@ class RemembranceAgentService : Service() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID).build()
         ServiceCompat.startForeground(this, 2, notification, foregroundServiceType)
 
-        apiKey = intent?.getStringExtra(GOOGLE_CLOUD_API_KEY) ?: "API KEY HERE"
+        apiKey = intent?.getStringExtra(GOOGLE_CLOUD_API_KEY) ?: ""
         initLanguageLocale()
         constructRepeatingRecognitionSession()
         startRecording()
