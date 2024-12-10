@@ -1,0 +1,5 @@
+com.termux.terminal.test.terminal-emulator-androidTest-0 /Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/build/generated/res/resValues/androidTest/debug
+com.termux.terminal.test.terminal-emulator-mergeDebugAndroidTestResources-1 /Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/build/intermediates/incremental/debugAndroidTest/mergeDebugAndroidTestResources/merged.dir
+com.termux.terminal.test.terminal-emulator-mergeDebugAndroidTestResources-2 /Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/build/intermediates/incremental/debugAndroidTest/mergeDebugAndroidTestResources/stripped.dir
+com.termux.terminal.test.terminal-emulator-debugAndroidTest-3 /Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/build/intermediates/merged_res/debugAndroidTest/mergeDebugAndroidTestResources
+com.termux.terminal.test.terminal-emulator-debug-4 /Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/build/intermediates/packaged_res/debug/packageDebugResources

@@ -6,6 +6,8 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -84,7 +86,13 @@ class RetrieverService : Service() {
 
         createNotificationChannel()
         val notification = NotificationCompat.Builder(this, CHANNEL_ID).build()
-        ServiceCompat.startForeground(this, 1, notification, foregroundServiceType)
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            ServiceCompat.startForeground(this, 2, notification, foregroundServiceType)
+        } else {
+            ServiceCompat.startForeground(this, 2, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        }
+
         indexPathString = intent?.getStringExtra(INDEX_PATH_STRING_KEY) ?: ""
         if (indexPathString == "") {
             stopSelf()
@@ -158,10 +166,14 @@ class RetrieverService : Service() {
                 var response = ""
                 if(retrievedResult == null) {
                     response = "{\"similarity_score\": 0.0," +
-                            "\"document_title\": \"No documents found\"}"
+                            "\"document_title\": \"None\", " +
+                            "\"file_path\": null" +
+                            "}"
                 } else {
                     response = "{\"similarity_score\": ${retrievedResult.score}," +
-                            "\"document_title\": \"${retrievedResult.title}\"}"
+                            "\"document_title\": \"${retrievedResult.title}\", " +
+                            "\"file_path\": \"${retrievedResult.filePath}\"" +
+                            "}"
                 }
                 Log.w(TAG, "Writing to client: $response")
 

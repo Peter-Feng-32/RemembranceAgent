@@ -1,0 +1,10 @@
+#Tue Dec 10 14:35:36 EST 2024
+base.2=/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/build/intermediates/dex/debugAndroidTest/mergeProjectDexDebugAndroidTest/0/classes.dex
+path.2=0/classes.dex
+base.1=/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/build/intermediates/dex/debugAndroidTest/mergeLibDexDebugAndroidTest/8/classes.dex
+path.1=8/classes.dex
+base.0=/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/build/intermediates/dex/debugAndroidTest/mergeExtDexDebugAndroidTest/classes.dex
+renamed.2=classes3.dex
+renamed.1=classes2.dex
+renamed.0=classes.dex
+path.0=classes.dex

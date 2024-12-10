@@ -1,9 +1,14 @@
 package com.example.remembranceagent
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
@@ -13,6 +18,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.MaterialTheme
+import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat.startForeground
 import androidx.core.content.ContextCompat
 import com.example.remembranceagent.retrieval.Indexer
 import com.example.remembranceagent.retrieval.IndexingScheduler
@@ -106,6 +113,44 @@ class MainActivity : ComponentActivity() {
         thread {
             indexer.indexDocuments()
         }
+    }
+
+    fun createNotification(channelId: String, notificationTitle: String, notificationTicker: String, notificationContent: String) : Notification{
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val  mChannelName = getString(R.string.app_name)
+            val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            val notificationChannel = NotificationChannel(
+                channelId,
+                mChannelName,
+                NotificationManager.IMPORTANCE_LOW
+            )
+            notificationManager.createNotificationChannel(notificationChannel)
+            NotificationCompat.Builder(this, notificationChannel.id)
+        } else {
+            NotificationCompat.Builder(this)
+        }
+
+        val myIntent = Intent(this, MainActivity::class.java)
+
+        myIntent.addFlags( Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            myIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        builder
+            .setContentTitle(notificationTitle)
+            .setTicker(notificationTicker)      //It will show text on status bar, even without having user to "pull down" the incoming notification.
+            .setContentText(notificationContent)
+            .setContentIntent(pendingIntent)
+
+        val notification = builder.build()
+        notification.flags = notification.flags or NotificationCompat.FLAG_ONGOING_EVENT or NotificationCompat.FLAG_NO_CLEAR
+        return notification
     }
 
     fun startRemembranceAgent() {

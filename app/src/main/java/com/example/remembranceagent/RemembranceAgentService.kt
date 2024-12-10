@@ -5,9 +5,11 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.os.Build
 import android.os.IBinder
 import android.text.Spanned
 import android.util.Log
@@ -69,11 +71,11 @@ class RemembranceAgentService : Service() {
     private val SERVER_HOST = "127.0.0.1"
     private val SERVER_PORT = 9999
     private lateinit var socket: Socket
-    val CHANNEL_ID = "CAPTIONING_CHANNEL"
+    val CHANNEL_ID = "TRANSCRIPTION_CHANNEL"
 
     fun createNotificationChannel() {
-        val name = "Captioning Channel"
-        val descriptionText = "Channel for notifications from Captioning"
+        val name = "Transcription Channel"
+        val descriptionText = "Channel for notifications from transcriptions for the RA"
         val importance = NotificationManager.IMPORTANCE_DEFAULT
         val mChannel = NotificationChannel(CHANNEL_ID, name, importance)
         mChannel.description = descriptionText
@@ -86,7 +88,11 @@ class RemembranceAgentService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         createNotificationChannel()
         val notification = NotificationCompat.Builder(this, CHANNEL_ID).build()
-        ServiceCompat.startForeground(this, 2, notification, foregroundServiceType)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            ServiceCompat.startForeground(this, 2, notification, foregroundServiceType)
+        } else {
+            ServiceCompat.startForeground(this, 2, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE)
+        }
 
         apiKey = intent?.getStringExtra(GOOGLE_CLOUD_API_KEY) ?: ""
         initLanguageLocale()

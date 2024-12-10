@@ -6,18 +6,20 @@ import com.example.remembranceagent.ui.INDEX_PATH_STRING_KEY
 import org.apache.lucene.analysis.en.EnglishAnalyzer
 import org.apache.lucene.document.Document
 import org.apache.lucene.document.Field
+import org.apache.lucene.document.FieldType
 import org.apache.lucene.document.TextField
+import org.apache.lucene.index.FieldInfo.IndexOptions
 import org.apache.lucene.index.IndexWriter
 import org.apache.lucene.index.IndexWriterConfig
 import org.apache.lucene.store.FSDirectory
 import org.apache.lucene.util.Version
 import java.io.File
-import java.io.FileFilter
 import java.nio.charset.StandardCharsets
 import java.nio.file.DirectoryStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+
 
 private val TAG = "Indexer"
 
@@ -39,12 +41,15 @@ class Indexer(val preferences: SharedPreferences, val documentsPath: Path) {
         fun removeListener(listener: () -> Unit) {
             listeners.remove(listener)
         }
+
+        var typeOffsets = FieldType(TextField.TYPE_STORED)
     }
 
 
     val analyzer = EnglishAnalyzer(Version.LUCENE_47)
 
     init {
+        typeOffsets.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS)
         setupDirs()
     }
 
@@ -134,11 +139,13 @@ class Indexer(val preferences: SharedPreferences, val documentsPath: Path) {
         }
     }
 
+
+
     // If we want to retrieve content we can read the original file.
     private fun createTxtDocument(title: String, content: String, filePath: String) : Document{
         val document = Document()
         document.add(TextField("Title", title, Field.Store.YES))
-        document.add(TextField("Content", content, Field.Store.NO))
+        document.add(Field("Content", content, typeOffsets))
         document.add(TextField("FilePath", filePath, Field.Store.YES))
         return document
     }

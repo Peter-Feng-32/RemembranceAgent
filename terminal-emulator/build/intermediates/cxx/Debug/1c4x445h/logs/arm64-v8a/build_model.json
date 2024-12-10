@@ -133,7 +133,7 @@
         "rootBuildGradleFolder": "/Users/Peter/Desktop/Research/RemembranceAgent",
         "sdkFolder": "/Users/Peter/Library/Android/sdk",
         "isBuildOnlyTargetAbiEnabled": true,
-        "ideBuildTargetAbi": "arm64-v8a",
+        "ideBuildTargetAbi": "arm64-v8a,armeabi-v7a,armeabi",
         "isCmakeBuildCohabitationEnabled": false,
         "isPrefabEnabled": false
       },

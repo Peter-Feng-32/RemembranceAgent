@@ -1,6 +1,7 @@
 package com.example.remembranceagent.retrieval
 
 import android.content.Context
+import android.util.Log
 import androidx.work.*
 import androidx.work.PeriodicWorkRequest
 import com.example.remembranceagent.ui.DOCUMENTS_PATH_STRING_KEY
@@ -14,9 +15,6 @@ val workName = "Remembrance Agent Document Indexing"
 class IndexingScheduler() {
     fun scheduleWork(context: Context, indexPathString: String, documentsPathString: String) {
         val constraints = Constraints.Builder()
-            .setRequiresBatteryNotLow(true)
-            .setRequiresDeviceIdle(true)
-            .setRequiresStorageNotLow(true)
             .build()
 
         val inputData = Data.Builder()

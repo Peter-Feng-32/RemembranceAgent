@@ -14,7 +14,111 @@
   },
   {
     "level_": 0,
-    "message_": "JSON \u0027/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/build/.cxx/Debug/1c4x445h/x86/android_gradle_build.json\u0027 was up-to-date",
+    "message_": "rebuilding JSON /Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/build/.cxx/Debug/1c4x445h/x86/android_gradle_build.json due to:",
+    "file_": "/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/src/main/jni/Android.mk",
+    "tag_": "debug|x86",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "- no fingerprint file, will remove stale configuration folder",
+    "file_": "/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/src/main/jni/Android.mk",
+    "tag_": "debug|x86",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "removing stale contents from \u0027/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/build/.cxx/Debug/1c4x445h/x86\u0027",
+    "file_": "/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/src/main/jni/Android.mk",
+    "tag_": "debug|x86",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "created folder \u0027/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/build/.cxx/Debug/1c4x445h/x86\u0027",
+    "file_": "/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/src/main/jni/Android.mk",
+    "tag_": "debug|x86",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "executing ndkBuild /Users/Peter/Library/Android/sdk/ndk/22.1.7171670/ndk-build \\\n  NDK_PROJECT_PATH\u003dnull \\\n  APP_BUILD_SCRIPT\u003d/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/src/main/jni/Android.mk \\\n  APP_ABI\u003dx86 \\\n  NDK_ALL_ABIS\u003dx86 \\\n  NDK_DEBUG\u003d1 \\\n  APP_PLATFORM\u003dandroid-30 \\\n  NDK_OUT\u003d/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/build/intermediates/cxx/Debug/1c4x445h/obj \\\n  NDK_LIBS_OUT\u003d/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/build/intermediates/cxx/Debug/1c4x445h/lib \\\n  APP_CFLAGS+\u003d-std\u003dc11 \\\n  APP_CFLAGS+\u003d-Wall \\\n  APP_CFLAGS+\u003d-Wextra \\\n  APP_CFLAGS+\u003d-Werror \\\n  APP_CFLAGS+\u003d-Os \\\n  APP_CFLAGS+\u003d-fno-stack-protector \\\n  APP_CFLAGS+\u003d-Wl,--gc-sections \\\n  APP_SHORT_COMMANDS\u003dfalse \\\n  LOCAL_SHORT_COMMANDS\u003dfalse \\\n  -B \\\n  -n\n",
+    "file_": "/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/src/main/jni/Android.mk",
+    "tag_": "debug|x86",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "/Users/Peter/Library/Android/sdk/ndk/22.1.7171670/ndk-build \\\n  NDK_PROJECT_PATH\u003dnull \\\n  APP_BUILD_SCRIPT\u003d/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/src/main/jni/Android.mk \\\n  APP_ABI\u003dx86 \\\n  NDK_ALL_ABIS\u003dx86 \\\n  NDK_DEBUG\u003d1 \\\n  APP_PLATFORM\u003dandroid-30 \\\n  NDK_OUT\u003d/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/build/intermediates/cxx/Debug/1c4x445h/obj \\\n  NDK_LIBS_OUT\u003d/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/build/intermediates/cxx/Debug/1c4x445h/lib \\\n  APP_CFLAGS+\u003d-std\u003dc11 \\\n  APP_CFLAGS+\u003d-Wall \\\n  APP_CFLAGS+\u003d-Wextra \\\n  APP_CFLAGS+\u003d-Werror \\\n  APP_CFLAGS+\u003d-Os \\\n  APP_CFLAGS+\u003d-fno-stack-protector \\\n  APP_CFLAGS+\u003d-Wl,--gc-sections \\\n  APP_SHORT_COMMANDS\u003dfalse \\\n  LOCAL_SHORT_COMMANDS\u003dfalse \\\n  -B \\\n  -n\n",
+    "file_": "/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/src/main/jni/Android.mk",
+    "tag_": "debug|x86",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "Received process result: 0",
+    "file_": "/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/src/main/jni/Android.mk",
+    "tag_": "debug|x86",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "parse and convert ndk-build output to build configuration JSON",
+    "file_": "/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/src/main/jni/Android.mk",
+    "tag_": "debug|x86",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "done executing ndkBuild",
     "file_": "/Users/Peter/Desktop/Research/RemembranceAgent/terminal-emulator/src/main/jni/Android.mk",
     "tag_": "debug|x86",
     "diagnosticCode_": 0,
